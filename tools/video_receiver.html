@@ -1,0 +1,50 @@
+<html class="bluetoothvideoClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>sidianneng</title>
+</head>
+<body>
+<script>
+
+var connectTrys = 0;
+
+function connect() {
+    var deviceOptions = {
+        acceptAllDevices: true,
+    }; 
+
+    console.log(deviceOptions)
+	
+    navigator.bluetooth.requestDevice(deviceOptions).then(device => {
+        bluetoothDevice = device;
+        addLog("Connecting to: " + bluetoothDevice.name);
+        doConnect();
+    });
+}
+
+function doConnect() {
+}
+
+function addLog(logTXT) {
+    var time = new Date().toLocaleTimeString("de-DE");
+    var logString = time + ": " + logTXT;
+    document.getElementById("log").innerHTML += logString + "<br>";
+}
+
+function handleError(error) {
+    addLog(error);
+    if (connectTrys < 5) {
+        connectTrys++;
+        addLog("Reconnect " + connectTrys + " from " + 5);
+        doConnect();
+    } else {
+        addLog("Something went wrong, to many reconnect's");
+        connectTrys = 0;
+    }
+}
+</script>
+<big><big>Bluetooth Video Transmission</big></big><br>
+  <button type="button" onclick="connect();">Connect</button>
+  <button type="button" onclick="reConnect();">Disconnect</button><br>
+  <div id="log">Log:<br></div>
+  <div id="result"></div>
+</body></html>
