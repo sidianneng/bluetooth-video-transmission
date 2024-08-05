@@ -7,20 +7,42 @@
 
 var connectTrys = 0;
 
+//BLE value
+var bluetoothDevice, gattServer, Theservice, writeCharacteristic;
+var ServiceMain;
+var settingsCharacteristics;
+
 function connect() {
     var deviceOptions = {
+		optionalServices: [0x00ff],
         acceptAllDevices: true,
     }; 
 
     console.log(deviceOptions)
 	
+	if (bluetoothDevice != null) bluetoothDevice.gatt.disconnect();
+	
+	gattServer = null;
+	Theservice = null;
+	writeCharacteristic = null;
+	settingsCharacteristics = null;
+	
     navigator.bluetooth.requestDevice(deviceOptions).then(device => {
         bluetoothDevice = device;
         addLog("Connecting to: " + bluetoothDevice.name);
-		return device.gatt.connect();
-    }).then(server => {
-        console.log('Connected to GATT Server: ' + server.device.name);
-		addLog('Connected to GATT Server: ' + server.device.name);
+		bluetoothDevice.gatt.connect().then(server => {
+			console.log("Found GATT server");
+			gattServer = server;
+			return gattServer.getPrimaryService(0x00ff);
+		}).then(service => {
+			console.log("Found service");
+			Theservice = service;
+			return Theservice.getCharacteristic(0xff01);
+		}).then(characteristic => {
+			console.log("Found write characteristic");
+			settingsCharacteristics = characteristic;
+		}).catch(handleError);
+		
     }).catch(handleError);
 }
 
@@ -37,6 +59,32 @@ function disconnect() {
     }
 }
 
+function hexToBytes(hex) {
+    for (var bytes = [], c = 0; c < hex.length; c += 2)
+        bytes.push(parseInt(hex.substr(c, 2), 16));
+    return new Uint8Array(bytes);
+}
+
+function senddata(data, characteristic){
+    return new Promise(function(resolve, reject) {
+        console.log("Send: " + data);
+        characteristic.writeValue(hexToBytes(data)).then(function(character) {
+            resolve("ok");
+        }).catch(function(err) {
+            reject("some error while sending char data");
+        });
+    });
+}
+
+function write_data() {		
+		var bytes_to_send = "dd";
+		addLog("Sending bytes: " + bytes_to_send);
+		senddata(bytes_to_send, settingsCharacteristics);
+}
+
+function read_data() {
+}
+
 function addLog(logTXT) {
     var time = new Date().toLocaleTimeString("de-DE");
     var logString = time + ": " + logTXT;
@@ -48,7 +96,6 @@ function handleError(error) {
     if (connectTrys < 5) {
         connectTrys++;
         addLog("Reconnect " + connectTrys + " from " + 5);
-        doConnect();
     } else {
         addLog("Something went wrong, to many reconnect's");
         connectTrys = 0;
@@ -57,7 +104,9 @@ function handleError(error) {
 </script>
 <big><big>Bluetooth Video Transmission</big></big><br>
   <button type="button" onclick="connect();">Connect</button>
-  <button type="button" onclick="disconnect();">Disconnect</button><br>
+  <button type="button" onclick="disconnect();">Disconnect</button><br><br>
+  <button type="button" onclick="write_data();">Write_Data</button>
+  <button type="button" onclick="read_data();">Read_Data</button><br><br>
   <div id="log">Log:<br></div>
   <div id="result"></div>
 </body></html>
