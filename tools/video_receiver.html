@@ -77,12 +77,18 @@ function senddata(data, characteristic){
 }
 
 function write_data() {		
-		var bytes_to_send = "dd";
-		addLog("Sending bytes: " + bytes_to_send);
-		senddata(bytes_to_send, settingsCharacteristics);
+	var bytes_to_send = "dd";
+	addLog("Sending bytes: " + bytes_to_send);
+	senddata(bytes_to_send, settingsCharacteristics);
 }
 
 function read_data() {
+	return settingsCharacteristics.readValue().then(value => {
+        let data = new Uint8Array(value.buffer);
+        console.log("Read value:", data);
+        let hexString = Array.from(data).map(byte => byte.toString(16).padStart(2, '0')).join(' ');
+        console.log("Read value (hex):", hexString);
+	});
 }
 
 function addLog(logTXT) {
