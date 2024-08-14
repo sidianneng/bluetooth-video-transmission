@@ -41,9 +41,28 @@ function connect() {
 		}).then(characteristic => {
 			console.log("Found write characteristic");
 			settingsCharacteristics = characteristic;
+			return settingsCharacteristics.startNotifications();
+		}).then(() => {
+			console.log("Notifications started");
+			settingsCharacteristics.addEventListener('characteristicvaluechanged', handleNotifications);
 		}).catch(handleError);
 		
     }).catch(handleError);
+}
+
+function handleNotifications(event) {
+    let value = event.target.value;
+    
+    let hexArray = [];
+
+    for (let i = 0; i < value.byteLength; i++) {
+        let hexString = value.getUint8(i).toString(16).padStart(2, '0');
+        hexArray.push(hexString);
+    }
+
+    let hexString = hexArray.join(' ');
+    console.log('Received notification (hex): ', hexString);
+    addLog('Received notification (hex): ' + hexString);
 }
 
 function disconnect() {
@@ -88,7 +107,7 @@ function read_data() {
         console.log("Read value:", data);
         let hexString = Array.from(data).map(byte => byte.toString(16).padStart(2, '0')).join(' ');
         console.log("Read value (hex):", hexString);
-	});
+    });
 }
 
 function addLog(logTXT) {
