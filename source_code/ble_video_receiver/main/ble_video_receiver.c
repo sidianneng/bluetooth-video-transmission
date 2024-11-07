@@ -383,6 +383,7 @@ static uint64_t last_time = 0, current_time = 0;
 static void display_pretty_colors(spi_device_handle_t spi)
 {
     uint16_t *lines[2];
+    esp_err_t ret;
     //Allocate memory for the pixel buffers
     for (int i = 0; i < 2; i++) {
         lines[i] = heap_caps_malloc(240 * PARALLEL_LINES * sizeof(uint16_t), MALLOC_CAP_DMA);
@@ -395,9 +396,12 @@ static void display_pretty_colors(spi_device_handle_t spi)
 
     while (1) {
         frame++;
-	//current_time = esp_timer_get_time();
+	current_time = esp_timer_get_time();
 	//ESP_LOGI("S", "%d\n", (int)(current_time - last_time));
 	//last_time = current_time;
+        ret = pretty_effect_init();
+        ESP_LOGI("S", "%d\n", (int)(esp_timer_get_time() - current_time));
+        ESP_ERROR_CHECK(ret);
         for (int y = 0; y < 240; y += PARALLEL_LINES) {
             //Calculate a line.
             pretty_effect_calc_lines(lines[calc_line], y, frame, PARALLEL_LINES);
@@ -450,9 +454,9 @@ void app_main(void)
     lcd_init(spi);
     //Initialize the effect displayed
     current_time = esp_timer_get_time();
-    ret = pretty_effect_init();
-    ESP_LOGI("S", "%d\n", (int)(esp_timer_get_time() - current_time));
-    ESP_ERROR_CHECK(ret);
+    //ret = pretty_effect_init();
+    //ESP_LOGI("S", "%d\n", (int)(esp_timer_get_time() - current_time));
+    //ESP_ERROR_CHECK(ret);
 
     //Go do nice stuff.
     display_pretty_colors(spi);
