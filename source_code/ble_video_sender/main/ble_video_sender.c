@@ -33,6 +33,77 @@
 
 #include "sdkconfig.h"
 
+#define GATTS_TAG "GATTS_DEMO"
+
+//camera include
+#include <nvs_flash.h>
+#include "esp_camera.h"
+
+#define CAM_PIN_PWDN -1  //power down is not used
+#define CAM_PIN_RESET -1 //software reset will be performed
+#define CAM_PIN_XCLK 15
+#define CAM_PIN_SIOD 4
+#define CAM_PIN_SIOC 5
+
+#define CAM_PIN_D7 16
+#define CAM_PIN_D6 17
+#define CAM_PIN_D5 18
+#define CAM_PIN_D4 12
+#define CAM_PIN_D3 10
+#define CAM_PIN_D2 8
+#define CAM_PIN_D1 9
+#define CAM_PIN_D0 11
+#define CAM_PIN_VSYNC 6
+#define CAM_PIN_HREF 7
+#define CAM_PIN_PCLK 13
+
+static camera_config_t camera_config = {
+    .pin_pwdn = CAM_PIN_PWDN,
+    .pin_reset = CAM_PIN_RESET,
+    .pin_xclk = CAM_PIN_XCLK,
+    .pin_sccb_sda = CAM_PIN_SIOD,
+    .pin_sccb_scl = CAM_PIN_SIOC,
+
+    .pin_d7 = CAM_PIN_D7,
+    .pin_d6 = CAM_PIN_D6,
+    .pin_d5 = CAM_PIN_D5,
+    .pin_d4 = CAM_PIN_D4,
+    .pin_d3 = CAM_PIN_D3,
+    .pin_d2 = CAM_PIN_D2,
+    .pin_d1 = CAM_PIN_D1,
+    .pin_d0 = CAM_PIN_D0,
+    .pin_vsync = CAM_PIN_VSYNC,
+    .pin_href = CAM_PIN_HREF,
+    .pin_pclk = CAM_PIN_PCLK,
+
+    //XCLK 20MHz or 10MHz for OV2640 double FPS (Experimental)
+    .xclk_freq_hz = 20000000,
+    .ledc_timer = LEDC_TIMER_0,
+    .ledc_channel = LEDC_CHANNEL_0,
+
+    .pixel_format = PIXFORMAT_JPEG,
+    .frame_size = FRAMESIZE_240X240,
+
+    .jpeg_quality = 50, //0-63, for OV series camera sensors, lower number means higher quality
+    .fb_count = 1,       //When jpeg mode is used, if fb_count more than one, the driver will work in continuous mode.
+    .fb_location = CAMERA_FB_IN_DRAM,
+    .grab_mode = CAMERA_GRAB_WHEN_EMPTY,
+};
+
+static esp_err_t init_camera(void)
+{
+    //initialize the camera
+    esp_err_t err = esp_camera_init(&camera_config);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(GATTS_TAG, "Camera Init Failed");
+        return err;
+    }
+
+    return ESP_OK;
+}
+
+
 /**********************************************************
  * Thread/Task reference
  **********************************************************/
@@ -44,7 +115,6 @@
 
 #define SECOND_TO_USECOND          1000000
 
-#define GATTS_TAG "GATTS_DEMO"
 
 #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
 #define GATTS_NOTIFY_LEN    495
@@ -620,6 +690,9 @@ void throughput_server_task(void *param)
             assert(res == pdTRUE);
         } else {
             if (is_connect) {
+		camera_fb_t *pic = esp_camera_fb_get();
+		ESP_LOGI(GATTS_TAG, "Picture taken! Its size was: %zu bytes", pic->len);
+		esp_camera_fb_return(pic);
                 int free_buff_num = esp_ble_get_cur_sendable_packets_num(gl_profile_tab[PROFILE_A_APP_ID].conn_id);
                 if(free_buff_num > 0) {
                     for( ; free_buff_num > 0; free_buff_num--) {
@@ -731,6 +804,11 @@ void app_main(void)
     esp_err_t local_mtu_ret = esp_ble_gatt_set_local_mtu(517);
     if (local_mtu_ret){
         ESP_LOGE(GATTS_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
+    }
+
+    // init camera
+    if(ESP_OK != init_camera()) {
+        return;
     }
 
 #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
