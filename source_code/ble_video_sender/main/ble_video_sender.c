@@ -681,7 +681,6 @@ void throughput_server_task(void *param)
     indicate_data[GATTS_NOTIFY_LEN - 1] = sum;
 
     int32_t package_num = 0;
-    int32_t pic_toggle_cnt = 0;
     uint8_t *pic = jpeg_pic;
 
     while(1) {
@@ -690,9 +689,9 @@ void throughput_server_task(void *param)
             assert(res == pdTRUE);
         } else {
             if (is_connect) {
-		camera_fb_t *pic = esp_camera_fb_get();
-		ESP_LOGI(GATTS_TAG, "Picture taken! Its size was: %zu bytes", pic->len);
-		esp_camera_fb_return(pic);
+		camera_fb_t *pic_cam = esp_camera_fb_get();
+		ESP_LOGI(GATTS_TAG, "Picture taken! Its size was: %zu bytes", pic_cam->len);
+		pic = pic_cam->buf;
                 int free_buff_num = esp_ble_get_cur_sendable_packets_num(gl_profile_tab[PROFILE_A_APP_ID].conn_id);
                 if(free_buff_num > 0) {
                     for( ; free_buff_num > 0; free_buff_num--) {
@@ -709,16 +708,12 @@ void throughput_server_task(void *param)
 								gl_profile_tab[PROFILE_A_APP_ID].char_handle,
 								2583 - (package_num * sizeof(indicate_data)), pic + (package_num * sizeof(indicate_data)), false);
 				package_num = 0;
-				pic_toggle_cnt++;
-				if(pic_toggle_cnt % 2)
-					pic = jpeg_pic;
-				else
-					pic = jpeg_pic2;
 			}
                     }
                 } else { //Add the vTaskDelay to prevent this task from consuming the CPU all the time, causing low-priority tasks to not be executed at all.
                     vTaskDelay( 10 / portTICK_PERIOD_MS );
                 }
+		esp_camera_fb_return(pic_cam);
             } else {
                  vTaskDelay(300 / portTICK_PERIOD_MS);
             }
