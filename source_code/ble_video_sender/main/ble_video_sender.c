@@ -672,6 +672,15 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
     } while (0);
 }
 
+/*
+ * param *inputdata: picture data get from camera
+ * param *outputdata: data packet will be sent via bluetooth
+ * param outputdatalen: output data length
+ * return the picture data index from camera for next packet*/
+static unsigned int pic_data_package(uint8_t *inputdata, uint8_t *outputdata, uint32_t outputdatalen)
+{
+}
+
 #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
 void throughput_server_task(void *param)
 {
@@ -698,7 +707,7 @@ void throughput_server_task(void *param)
                         //esp_ble_gatts_send_indicate(gl_profile_tab[PROFILE_A_APP_ID].gatts_if, gl_profile_tab[PROFILE_A_APP_ID].conn_id,
                         //                            gl_profile_tab[PROFILE_A_APP_ID].char_handle,
                         //                            sizeof(indicate_data), indicate_data, false);
-			if((package_num + 1) * sizeof(indicate_data) < 2583) {
+			if((package_num + 1) * sizeof(indicate_data) < pic_cam->len) {
 				esp_ble_gatts_send_indicate(gl_profile_tab[PROFILE_A_APP_ID].gatts_if, gl_profile_tab[PROFILE_A_APP_ID].conn_id,
 								gl_profile_tab[PROFILE_A_APP_ID].char_handle,
 								sizeof(indicate_data), pic + (package_num * sizeof(indicate_data)), false);
@@ -706,7 +715,7 @@ void throughput_server_task(void *param)
 			} else {
 				esp_ble_gatts_send_indicate(gl_profile_tab[PROFILE_A_APP_ID].gatts_if, gl_profile_tab[PROFILE_A_APP_ID].conn_id,
 								gl_profile_tab[PROFILE_A_APP_ID].char_handle,
-								2583 - (package_num * sizeof(indicate_data)), pic + (package_num * sizeof(indicate_data)), false);
+								pic_cam-len - (package_num * sizeof(indicate_data)), pic + (package_num * sizeof(indicate_data)), false);
 				package_num = 0;
 			}
                     }
