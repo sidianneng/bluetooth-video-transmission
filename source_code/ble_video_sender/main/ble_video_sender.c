@@ -32,6 +32,7 @@
 #include "esp_timer.h"
 
 #include "sdkconfig.h"
+#include "pic_packet.h"
 
 #define GATTS_TAG "GATTS_DEMO"
 
@@ -103,6 +104,12 @@ static esp_err_t init_camera(void)
     return ESP_OK;
 }
 
+/**********************************************************
+ * picture packet
+ **********************************************************/
+#define NOTIFY_LEN    495
+Pic_Packet pic_packet;
+static uint8_t packetdata[NOTIFY_LEN] = {0};
 
 /**********************************************************
  * Thread/Task reference
@@ -672,15 +679,6 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
     } while (0);
 }
 
-/*
- * param *inputdata: picture data get from camera
- * param *outputdata: data packet will be sent via bluetooth
- * param outputdatalen: output data length
- * return the picture data index from camera for next packet*/
-static unsigned int pic_data_package(uint8_t *inputdata, uint8_t *outputdata, uint32_t outputdatalen)
-{
-}
-
 #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
 void throughput_server_task(void *param)
 {
@@ -688,9 +686,7 @@ void throughput_server_task(void *param)
     uint8_t sum = check_sum(indicate_data, sizeof(indicate_data) - 1);
     // Added the check sum in the last data value.
     indicate_data[GATTS_NOTIFY_LEN - 1] = sum;
-
-    int32_t package_num = 0;
-    uint8_t *pic = jpeg_pic;
+    uint16_t index = 0;
 
     while(1) {
         if (!can_send_notify) {
@@ -700,23 +696,22 @@ void throughput_server_task(void *param)
             if (is_connect) {
 		camera_fb_t *pic_cam = esp_camera_fb_get();
 		ESP_LOGI(GATTS_TAG, "Picture taken! Its size was: %zu bytes", pic_cam->len);
-		pic = pic_cam->buf;
+		pic_packet.frame_cnt++;
+		pic_packet.all_pack_num = pic_cam->len % pic_packet.length + 1;
                 int free_buff_num = esp_ble_get_cur_sendable_packets_num(gl_profile_tab[PROFILE_A_APP_ID].conn_id);
                 if(free_buff_num > 0) {
                     for( ; free_buff_num > 0; free_buff_num--) {
-                        //esp_ble_gatts_send_indicate(gl_profile_tab[PROFILE_A_APP_ID].gatts_if, gl_profile_tab[PROFILE_A_APP_ID].conn_id,
-                        //                            gl_profile_tab[PROFILE_A_APP_ID].char_handle,
-                        //                            sizeof(indicate_data), indicate_data, false);
-			if((package_num + 1) * sizeof(indicate_data) < pic_cam->len) {
+			pic_packet.cur_pack_num++;
+			index += pic_packet_data(&pic_packet, pic_cam->buf + index, pic_cam->len - index);
+			if(index + pic_packet.length < pic_cam->len) {
 				esp_ble_gatts_send_indicate(gl_profile_tab[PROFILE_A_APP_ID].gatts_if, gl_profile_tab[PROFILE_A_APP_ID].conn_id,
 								gl_profile_tab[PROFILE_A_APP_ID].char_handle,
-								sizeof(indicate_data), pic + (package_num * sizeof(indicate_data)), false);
-				package_num++;
+								sizeof(packetdata), packetdata, false);
 			} else {
 				esp_ble_gatts_send_indicate(gl_profile_tab[PROFILE_A_APP_ID].gatts_if, gl_profile_tab[PROFILE_A_APP_ID].conn_id,
 								gl_profile_tab[PROFILE_A_APP_ID].char_handle,
-								pic_cam-len - (package_num * sizeof(indicate_data)), pic + (package_num * sizeof(indicate_data)), false);
-				package_num = 0;
+								pic_packet.length + PACK_HEAD_LEN, packetdata, false);
+				break;
 			}
                     }
                 } else { //Add the vTaskDelay to prevent this task from consuming the CPU all the time, causing low-priority tasks to not be executed at all.
@@ -813,6 +808,13 @@ void app_main(void)
     // init camera
     if(ESP_OK != init_camera()) {
         return;
+    }
+
+    // init picture packet
+    ret = pic_packet_init(&pic_packet, packetdata, sizeof(packetdata));
+    if(ESP_OK != ret) {
+        ESP_LOGE(GATTS_TAG, "picture packet init failed, error code = %x", ret);
+	return;
     }
 
 #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
