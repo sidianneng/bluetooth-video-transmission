@@ -56,12 +56,12 @@ let imageUrl = null;
 function handleNotifications(event) {
     let value = event.target.value;
 
-    for (let i = 0; i < value.byteLength; i++) {
+    for (let i = 6; i < value.byteLength; i++) {
         let hexString = value.getUint8(i).toString(16).padStart(2, '0');
         hexArray.push(hexString);
     }
 
-    if (hexArray.length >= 4608) {
+    if (value.getUint8(2) == value.getUint8(3)) {
         console.log('Received complete image data');
 
         let byteArray = new Uint8Array(hexArray.map(byte => parseInt(byte, 16)));
