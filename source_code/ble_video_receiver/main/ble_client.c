@@ -4,12 +4,6 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
-/****************************************************************************
-*
-* This is the demo to test the BLE throughput. It should be used together with throughput_server demo.
-*
-****************************************************************************/
-
 #include "sdkconfig.h"
 #include <stdint.h>
 #include <string.h>
@@ -544,7 +538,7 @@ static void throughput_cal_task(void *param)
 }
 #endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
 
-void app_main(void)
+esp_err_t ble_client_init(void)
 {
     // Initialize NVS.
     esp_err_t ret = nvs_flash_init();
@@ -560,39 +554,39 @@ void app_main(void)
     ret = esp_bt_controller_init(&bt_cfg);
     if (ret) {
         ESP_LOGE(GATTC_TAG, "%s initialize controller failed, error code = %x", __func__, ret);
-        return;
+        return ESP_FAIL;
     }
 
     ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
     if (ret) {
         ESP_LOGE(GATTC_TAG, "%s enable controller failed, error code = %x", __func__, ret);
-        return;
+        return ESP_FAIL;
     }
 
     ret = esp_bluedroid_init();
     if (ret) {
         ESP_LOGE(GATTC_TAG, "%s init bluetooth failed, error code = %x", __func__, ret);
-        return;
+        return ESP_FAIL;
     }
 
     ret = esp_bluedroid_enable();
     if (ret) {
         ESP_LOGE(GATTC_TAG, "%s enable bluetooth failed, error code = %x", __func__, ret);
-        return;
+        return ESP_FAIL;
     }
 
     //register the  callback function to the gap module
     ret = esp_ble_gap_register_callback(esp_gap_cb);
     if (ret){
         ESP_LOGE(GATTC_TAG, "%s gap register failed, error code = %x", __func__, ret);
-        return;
+        return ESP_FAIL;
     }
 
     //register the callback function to the gattc module
     ret = esp_ble_gattc_register_callback(esp_gattc_cb);
     if(ret){
         ESP_LOGE(GATTC_TAG, "%s gattc register failed, error code = %x", __func__, ret);
-        return;
+        return ESP_FAIL;
     }
 
     ret = esp_ble_gattc_app_register(PROFILE_A_APP_ID);
@@ -618,7 +612,9 @@ void app_main(void)
     gattc_semaphore = xSemaphoreCreateBinary();
     if (!gattc_semaphore) {
         ESP_LOGE(GATTC_TAG, "%s, init fail, the gattc semaphore create fail.", __func__);
-        return;
+        return ESP_FAIL;
     }
 #endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
+
+    return ESP_OK;
 }

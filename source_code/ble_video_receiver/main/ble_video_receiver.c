@@ -19,6 +19,9 @@
 #include "esp_log.h"
 
 #include "pretty_effect.h"
+#include "ble_client.h"
+
+#define BLE_VIDEO_REV "ble_video_rev"
 
 /*
  This code displays some fancy graphics on the 320x240 LCD on an ESP-WROVER_KIT board.
@@ -452,6 +455,11 @@ void app_main(void)
     ESP_ERROR_CHECK(ret);
     //Initialize the LCD
     lcd_init(spi);
+    //Initialize the ble client
+    ret = ble_client_init();
+    if(ESP_OK != ret) {
+	ESP_LOGE(BLE_VIDEO_REV, "%s ble client init failed, error code = %x", __func__, ret);
+    }
     //Initialize the effect displayed
     current_time = esp_timer_get_time();
     //ret = pretty_effect_init();
