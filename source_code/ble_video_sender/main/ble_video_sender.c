@@ -711,7 +711,6 @@ void throughput_server_task(void *param)
 				esp_ble_gatts_send_indicate(gl_profile_tab[PROFILE_A_APP_ID].gatts_if, gl_profile_tab[PROFILE_A_APP_ID].conn_id,
 								gl_profile_tab[PROFILE_A_APP_ID].char_handle,
 								pic_packet.length + PACK_HEAD_LEN, packetdata, false);
-				ESP_LOGI(GATTS_TAG, "last packet len:%d", pic_packet.length + PACK_HEAD_LEN);
 				pic_packet.cur_pack_num = 0;
 				index = 0;
 				pic_packet.length = sizeof(packetdata) - PACK_HEAD_LEN;
