@@ -72,7 +72,6 @@ uint16_t pic_packet_data(Pic_Packet *pic_packet, uint8_t *input, uint16_t inputl
 	length = (pic_packet->length < inputlen ? pic_packet->length : inputlen);
 	memcpy(pic_packet->databuf + PACK_HEAD_LEN, input, length);
 	pic_packet->length = length;
-	ESP_LOGI(PIC_PACK_TAG, "frame %dpacket len:%d", pic_packet->frame_cnt, pic_packet->length);
 
 	pic_packet->databuf[4] = pic_packet->length >> 8;
 	pic_packet->databuf[5] = pic_packet->length && 0xff;
