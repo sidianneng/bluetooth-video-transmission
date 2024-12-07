@@ -686,7 +686,7 @@ void throughput_server_task(void *param)
     uint8_t sum = check_sum(indicate_data, sizeof(indicate_data) - 1);
     // Added the check sum in the last data value.
     indicate_data[GATTS_NOTIFY_LEN - 1] = sum;
-    uint16_t index = 0;
+    uint16_t index = 0, tmp_index;
 
     while(1) {
         if (!can_send_notify) {
@@ -697,13 +697,13 @@ void throughput_server_task(void *param)
 		camera_fb_t *pic_cam = esp_camera_fb_get();
 		ESP_LOGI(GATTS_TAG, "Picture taken! Its size was: %zu bytes", pic_cam->len);
 		pic_packet.frame_cnt++;
-		pic_packet.all_pack_num = pic_cam->len % pic_packet.length + 1;
+		pic_packet.all_pack_num = pic_cam->len / pic_packet.length + 1;
                 int free_buff_num = esp_ble_get_cur_sendable_packets_num(gl_profile_tab[PROFILE_A_APP_ID].conn_id);
                 if(free_buff_num > 0) {
                     for( ; free_buff_num > 0; free_buff_num--) {
 			pic_packet.cur_pack_num++;
-			index += pic_packet_data(&pic_packet, pic_cam->buf + index, pic_cam->len - index);
-			if(index + pic_packet.length < pic_cam->len) {
+			tmp_index = pic_packet_data(&pic_packet, pic_cam->buf + index, pic_cam->len - index);
+			if(index + pic_packet.length <= pic_cam->len) {
 				esp_ble_gatts_send_indicate(gl_profile_tab[PROFILE_A_APP_ID].gatts_if, gl_profile_tab[PROFILE_A_APP_ID].conn_id,
 								gl_profile_tab[PROFILE_A_APP_ID].char_handle,
 								sizeof(packetdata), packetdata, false);
@@ -711,8 +711,13 @@ void throughput_server_task(void *param)
 				esp_ble_gatts_send_indicate(gl_profile_tab[PROFILE_A_APP_ID].gatts_if, gl_profile_tab[PROFILE_A_APP_ID].conn_id,
 								gl_profile_tab[PROFILE_A_APP_ID].char_handle,
 								pic_packet.length + PACK_HEAD_LEN, packetdata, false);
+				ESP_LOGI(GATTS_TAG, "last packet len:%d", pic_packet.length + PACK_HEAD_LEN);
+				pic_packet.cur_pack_num = 0;
+				index = 0;
+				pic_packet.length = sizeof(packetdata) - PACK_HEAD_LEN;
 				break;
 			}
+			index += tmp_index;
                     }
                 } else { //Add the vTaskDelay to prevent this task from consuming the CPU all the time, causing low-priority tasks to not be executed at all.
                     vTaskDelay( 10 / portTICK_PERIOD_MS );

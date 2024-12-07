@@ -24,7 +24,9 @@ SOFTWARE.
 
 #include<string.h>
 #include "pic_packet.h"
+#include "esp_log.h"
 
+#define PIC_PACK_TAG "pic packet"
 
 /*
  * param *pic_packet: packet struct need to be initilized
@@ -37,7 +39,6 @@ esp_err_t    pic_packet_init(Pic_Packet *pic_packet, uint8_t *buffer, uint16_t l
 	if(length <= PACK_HEAD_LEN)
 		return ESP_ERR_INVALID_ARG;
 
-	pic_packet = (Pic_Packet *)buffer;
 	pic_packet->header = PACKET_HEADER;
 	pic_packet->frame_cnt = 0;
 	pic_packet->all_pack_num = 0;
@@ -65,14 +66,16 @@ uint16_t pic_packet_data(Pic_Packet *pic_packet, uint8_t *input, uint16_t inputl
 
 	pic_packet->databuf[0] = pic_packet->header;
 	pic_packet->databuf[1] = pic_packet->frame_cnt;
-	pic_packet->databuf[3] = pic_packet->all_pack_num;
-	pic_packet->databuf[4] = pic_packet->cur_pack_num;
-	pic_packet->databuf[5] = pic_packet->length >> 8;
-	pic_packet->databuf[6] = pic_packet->length && 0xff;
+	pic_packet->databuf[2] = pic_packet->all_pack_num;
+	pic_packet->databuf[3] = pic_packet->cur_pack_num;
 
 	length = (pic_packet->length < inputlen ? pic_packet->length : inputlen);
 	memcpy(pic_packet->databuf + PACK_HEAD_LEN, input, length);
 	pic_packet->length = length;
+	ESP_LOGI(PIC_PACK_TAG, "frame %dpacket len:%d", pic_packet->frame_cnt, pic_packet->length);
+
+	pic_packet->databuf[4] = pic_packet->length >> 8;
+	pic_packet->databuf[5] = pic_packet->length && 0xff;
 
 	return pic_packet->length;
 }
