@@ -74,7 +74,7 @@ uint16_t pic_packet_data(Pic_Packet *pic_packet, uint8_t *input, uint16_t inputl
 	pic_packet->length = length;
 
 	pic_packet->databuf[4] = pic_packet->length >> 8;
-	pic_packet->databuf[5] = pic_packet->length && 0xff;
+	pic_packet->databuf[5] = pic_packet->length & 0xff;
 
 	return pic_packet->length;
 }
