@@ -26,7 +26,7 @@ extern "C" {
  *         - ESP_ERR_NO_MEM if out of memory
  *         - ESP_OK on succesful decode
  */
-esp_err_t decode_image(uint16_t **pixels);
+esp_err_t decode_image(uint16_t *pixels);
 
 /**
  * @brief Calculate the effect for a bunch of lines.

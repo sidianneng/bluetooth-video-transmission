@@ -18,8 +18,8 @@
 #include "esp_timer.h"
 #include "esp_log.h"
 
-#include "pretty_effect.h"
 #include "ble_client.h"
+#include "decode_image.h"
 
 #define BLE_VIDEO_REV "ble_video_rev"
 
@@ -458,7 +458,7 @@ void app_main(void)
     //Initialize the ble client
     ret = ble_client_init();
     if(ESP_OK != ret) {
-	ESP_LOGE(BLE_VIDEO_REV, "%s ble client init failed, error code = %x", __func__, ret);
+        ESP_LOGE(BLE_VIDEO_REV, "%s ble client init failed, error code = %x", __func__, ret);
     }
     //Initialize the effect displayed
     current_time = esp_timer_get_time();
