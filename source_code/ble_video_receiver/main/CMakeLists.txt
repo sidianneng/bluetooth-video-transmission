@@ -1,5 +1,4 @@
-set(srcs "pretty_effect.c"
-    "ble_video_receiver.c"
+set(srcs "ble_video_receiver.c"
     "decode_image.c"
     "ble_client.c"
     )
