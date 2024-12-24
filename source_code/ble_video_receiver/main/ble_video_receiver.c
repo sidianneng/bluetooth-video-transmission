@@ -20,8 +20,17 @@
 
 #include "ble_client.h"
 #include "decode_image.h"
+#include "ble_video_receiver.h"
 
 #define BLE_VIDEO_REV "ble_video_rev"
+
+uint8_t jpeg_data[10 * 1024];
+
+Frame_data frame_data = {
+	.data = jpeg_data,
+	.length = 0,
+	.data_ready = false,
+};
 
 /*
  This code displays some fancy graphics on the 320x240 LCD on an ESP-WROVER_KIT board.
@@ -380,6 +389,7 @@ static void send_line_finish(spi_device_handle_t spi)
 }
 
 static uint64_t last_time = 0, current_time = 0;
+static unsigned int check_data = 0;
 //Simple routine to generate some patterns and send them to the LCD. Don't expect anything too
 //impressive. Because the SPI driver handles transactions in the background, we can calculate the next line
 //while the previous one is being sent.
@@ -399,28 +409,37 @@ static void display_pretty_colors(spi_device_handle_t spi)
 
     while (1) {
         frame++;
-	current_time = esp_timer_get_time();
-	//ESP_LOGI("S", "%d\n", (int)(current_time - last_time));
-	//last_time = current_time;
-        ret = pretty_effect_init();
-        ESP_LOGI("S", "%d\n", (int)(esp_timer_get_time() - current_time));
-        ESP_ERROR_CHECK(ret);
-        for (int y = 0; y < 240; y += PARALLEL_LINES) {
-            //Calculate a line.
-            pretty_effect_calc_lines(lines[calc_line], y, frame, PARALLEL_LINES);
-            //Finish up the sending process of the previous line, if any
-            if (sending_line != -1) {
-                send_line_finish(spi);
+	if (frame_data.data_ready){
+	    check_data = 0;
+	    for(int i = 0; i < frame_data.length; i++)
+		check_data += frame_data.data[i];
+	    ESP_LOGI("S", "get frame OK length:%d chksum:0x%08x\n", (int)frame_data.length, check_data);
+	    current_time = esp_timer_get_time();
+	    //ESP_LOGI("S", "%d\n", (int)(current_time - last_time));
+	    //last_time = current_time;
+            ret = decode_image(frame_data.data, frame_data.length);
+		//ret = decode_image(jpg_buffer22, sizeof(jpg_buffer22));
+            ESP_ERROR_CHECK(ret);
+            for (int y = 0; y < 240; y += PARALLEL_LINES) {
+                //Calculate a line.
+                decode_calc_lines(lines[calc_line], y, frame, PARALLEL_LINES);
+                //Finish up the sending process of the previous line, if any
+                if (sending_line != -1) {
+                    send_line_finish(spi);
+                }
+                //Swap sending_line and calc_line
+                sending_line = calc_line;
+                calc_line = (calc_line == 1) ? 0 : 1;
+                //Send the line we currently calculated.
+                send_lines(spi, y, lines[sending_line]);
+                //The line set is queued up for sending now; the actual sending happens in the
+                //background. We can go on to calculate the next line set as long as we do not
+                //touch line[sending_line]; the SPI sending process is still reading from that.
             }
-            //Swap sending_line and calc_line
-            sending_line = calc_line;
-            calc_line = (calc_line == 1) ? 0 : 1;
-            //Send the line we currently calculated.
-            send_lines(spi, y, lines[sending_line]);
-            //The line set is queued up for sending now; the actual sending happens in the
-            //background. We can go on to calculate the next line set as long as we do not
-            //touch line[sending_line]; the SPI sending process is still reading from that.
-        }
+	    frame_data.data_ready = false;
+	    frame_data.length = 0;
+	}
+	vTaskDelay(5 / portTICK_PERIOD_MS);
     }
 }
 

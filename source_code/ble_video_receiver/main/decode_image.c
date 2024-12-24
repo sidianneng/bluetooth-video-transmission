@@ -56,7 +56,7 @@ static int8_t xcomp[240], ycomp[240];
 //Calculate the pixel data for a set of lines (with implied line size of 320). Pixels go in dest, line is the Y-coordinate of the
 //first line to be calculated, linect is the amount of lines to calculate. Frame increases by one every time the entire image
 //is displayed; this is used to go to the next frame of animation.
-void pretty_effect_calc_lines(uint16_t *dest, int line, int frame, int linect)
+void decode_calc_lines(uint16_t *dest, int line, int frame, int linect)
 {
     for (int y = line; y < line + linect; y++) {
         for (int x = 0; x < 240; x++) {
@@ -66,25 +66,18 @@ void pretty_effect_calc_lines(uint16_t *dest, int line, int frame, int linect)
 }
 
 //Decode the embedded image into pixel lines that can be used with the rest of the logic.
-esp_err_t decode_image(uint16_t *pixels)
+static esp_err_t decode_jpeg(uint16_t *pixels, uint8_t *jpeg_data, uint32_t jpeg_len)
 {
     esp_err_t ret = ESP_OK;
+    esp_jpeg_image_output_t outimg;
+
+    if(!pixels || !jpeg_data || !jpeg_len)
+	    return ESP_ERR_INVALID_ARG;
 
     //JPEG decode config
-    esp_jpeg_image_cfg_t jpeg_cfg1 = {
-        .indata = (uint8_t *)jpg_buffer1,
-        .indata_size = sizeof(jpg_buffer1),
-        .outbuf = (uint8_t*)(pixels),
-        .outbuf_size = IMAGE_W * IMAGE_H * sizeof(uint16_t),
-        .out_format = JPEG_IMAGE_FORMAT_RGB565,
-        .out_scale = JPEG_IMAGE_SCALE_0,
-        .flags = {
-            .swap_color_bytes = 1,
-        }
-    };
-    esp_jpeg_image_cfg_t jpeg_cfg2 = {
-        .indata = (uint8_t *)jpg_buffer2,
-        .indata_size = sizeof(jpg_buffer2),
+    esp_jpeg_image_cfg_t jpeg_cfg = {
+        .indata = (uint8_t *)jpeg_data,
+        .indata_size = jpeg_len,
         .outbuf = (uint8_t*)(pixels),
         .outbuf_size = IMAGE_W * IMAGE_H * sizeof(uint16_t),
         .out_format = JPEG_IMAGE_FORMAT_RGB565,
@@ -95,18 +88,14 @@ esp_err_t decode_image(uint16_t *pixels)
     };
 
     //JPEG decode
-    esp_jpeg_image_output_t outimg;
-    if(switch_tag++ % 2)  
-    	esp_jpeg_decode(&jpeg_cfg2, &outimg);
-    else
-    	esp_jpeg_decode(&jpeg_cfg1, &outimg);
+    esp_jpeg_decode(&jpeg_cfg, &outimg);
 
     ESP_LOGI(TAG, "JPEG image decoded! Size of the decoded image is: %dpx x %dpx", outimg.width, outimg.height);
 
     return ret;
 }
 
-esp_err_t pretty_effect_init(void)
+esp_err_t decode_image(uint8_t *jpeg_data, uint32_t jpeg_len)
 {
-    return decode_image(pixels);
+    return decode_jpeg(pixels, jpeg_data, jpeg_len);
 }

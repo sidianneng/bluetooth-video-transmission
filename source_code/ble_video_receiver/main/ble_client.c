@@ -25,6 +25,8 @@
 #include "freertos/task.h"
 #include "esp_timer.h"
 
+#include "ble_video_receiver.h"
+
 /**********************************************************
  * Thread/Task reference
  **********************************************************/
@@ -63,6 +65,8 @@ uint8_t write_data[GATTC_WRITE_LEN] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 #endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
 
 static bool is_connect = false;
+
+extern Frame_data frame_data;
 
 /* Declare static functions */
 static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
@@ -297,13 +301,28 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
     }
     case ESP_GATTC_NOTIFY_EVT: {
 #if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
-        if (p_data->notify.is_notify &&
-            (p_data->notify.value[p_data->notify.value_len - 1] ==
-             check_sum(p_data->notify.value, p_data->notify.value_len - 1))){
-            notify_len += p_data->notify.value_len;
-        } else {
-            ESP_LOGE(GATTC_TAG, "ESP_GATTC_NOTIFY_EVT, receive indicate value:");
-        }
+        //if (p_data->notify.is_notify &&
+        //    (p_data->notify.value[p_data->notify.value_len - 1] ==
+        //     check_sum(p_data->notify.value, p_data->notify.value_len - 1))){
+        //    notify_len += p_data->notify.value_len;
+        //} else {
+        //    ESP_LOGE(GATTC_TAG, "ESP_GATTC_NOTIFY_EVT, receive indicate value:");
+        //}
+	if (p_data->notify.is_notify)
+		notify_len += p_data->notify.value_len;
+	if (p_data->notify.is_notify && p_data->notify.value[0] == 0x55 && !frame_data.data_ready){
+		//ESP_LOGI(GATTC_TAG, "get pic ~~~~~~~~~~~~~~~head:0x%02x fracnt:%d allnum:%d curnum:%d len:%d\n", p_data->notify.value[0], 
+		//		p_data->notify.value[1], p_data->notify.value[2], p_data->notify.value[3], 
+		//		p_data->notify.value[4] * 256 + p_data->notify.value[5]);
+		memcpy(frame_data.data + frame_data.length, p_data->notify.value + 6, p_data->notify.value[4] * 256 + p_data->notify.value[5]);
+		frame_data.length += (p_data->notify.value[4] * 256 + p_data->notify.value[5]);
+		//ESP_LOGI(GATTC_TAG,"frame leng:%d\n", (int)frame_data.length);
+		//current frame data is complete
+		if (p_data->notify.value[3] == p_data->notify.value[2] && !frame_data.data_ready){ 
+			//ESP_LOGI(GATTC_TAG, "receive pic success ~~~~~~~~~~~~~~~~~ ");
+			frame_data.data_ready = true;
+		}
+	}
         if (start == false) {
             start_time = esp_timer_get_time();
             start = true;
@@ -527,8 +546,8 @@ static void throughput_cal_task(void *param)
             if (start_time) {
                 current_time = esp_timer_get_time();
                 bit_rate = notify_len * SECOND_TO_USECOND / (current_time - start_time);
-                ESP_LOGI(GATTC_TAG, "Notify Bit rate = %" PRIu32 " Byte/s, = %" PRIu32 " bit/s, time = %ds",
-                        bit_rate, bit_rate<<3, (int)((current_time - start_time) / SECOND_TO_USECOND));
+                //ESP_LOGI(GATTC_TAG, "Notify Bit rate = %" PRIu32 " Byte/s, = %" PRIu32 " bit/s, time = %ds",
+                //        bit_rate, bit_rate<<3, (int)((current_time - start_time) / SECOND_TO_USECOND));
             } else {
                 ESP_LOGI(GATTC_TAG, "Notify Bit rate = 0 Byte/s, = 0 bit/s");
             }
