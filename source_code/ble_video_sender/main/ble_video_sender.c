@@ -680,6 +680,7 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
 }
 
 #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
+static unsigned int check_data = 0;
 void throughput_server_task(void *param)
 {
     vTaskDelay(2000 / portTICK_PERIOD_MS);
@@ -695,7 +696,10 @@ void throughput_server_task(void *param)
         } else {
             if (is_connect) {
 		camera_fb_t *pic_cam = esp_camera_fb_get();
-		ESP_LOGI(GATTS_TAG, "Picture taken! Its size was: %zu bytes", pic_cam->len);
+		check_data = 0;
+		for(int i = 0; i < pic_cam->len; i++)
+		    check_data += pic_cam->buf[i];
+		ESP_LOGI(GATTS_TAG, "Picture taken! Its size was: %zu bytes chksum:0x%08x", pic_cam->len, check_data);
 		pic_packet.frame_cnt++;
 		pic_packet.all_pack_num = pic_cam->len / pic_packet.length + 1;
                 int free_buff_num = esp_ble_get_cur_sendable_packets_num(gl_profile_tab[PROFILE_A_APP_ID].conn_id);
@@ -722,6 +726,7 @@ void throughput_server_task(void *param)
                     vTaskDelay( 10 / portTICK_PERIOD_MS );
                 }
 		esp_camera_fb_return(pic_cam);
+                vTaskDelay( 100 / portTICK_PERIOD_MS );
             } else {
                  vTaskDelay(300 / portTICK_PERIOD_MS);
             }
