@@ -33,6 +33,7 @@
 
 #include "sdkconfig.h"
 #include "pic_packet.h"
+#include "battery.h"
 
 #define GATTS_TAG "GATTS_DEMO"
 
@@ -736,6 +737,18 @@ void throughput_server_task(void *param)
 }
 #endif
 
+void battery_stat_task(void *param)
+{
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    Battery_stat bat_stat;
+
+    while(1) {
+        bat_stat = battery_get_stat(); 
+        ESP_LOGI(GATTS_TAG, "battery status:%d\n", bat_stat);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}
+
 #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
 void throughput_cal_task(void *param)
 {
@@ -831,6 +844,14 @@ void app_main(void)
     // preventing the sending task from using the un-updated Bluetooth state on another CPU.
     xTaskCreatePinnedToCore(&throughput_server_task, "throughput_server_task", 4096, NULL, 15, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
 #endif
+
+    // init the battery
+    ret = battery_init();
+    if(ESP_OK != ret) {
+        ESP_LOGE(GATTS_TAG, "battery init failed, error code = %x", ret);
+    }
+    // The task to get battery status 
+    xTaskCreatePinnedToCore(&battery_stat_task, "battery_stat_task", 4096, NULL, 16, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
 
 #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
     xTaskCreatePinnedToCore(&throughput_cal_task, "throughput_cal_task", 4096, NULL, 14, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
