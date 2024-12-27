@@ -33,8 +33,11 @@
 
 #include "sdkconfig.h"
 #include "pic_packet.h"
+#include "key_input.h"
 
 #define GATTS_TAG "GATTS_DEMO"
+
+extern QueueHandle_t gpio_evt_queue;
 
 //camera include
 #include <nvs_flash.h>
@@ -755,6 +758,16 @@ void throughput_cal_task(void *param)
 }
 #endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
 
+static void key_input_task(void* arg)
+{
+    uint32_t io_num;
+    for (;;) {
+        if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
+            printf("GPIO[%"PRIu32"] intr, val: %d\n", io_num, gpio_get_level(io_num));
+        }
+    }
+}
+
 void app_main(void)
 {
     esp_err_t ret;
@@ -823,8 +836,16 @@ void app_main(void)
     ret = pic_packet_init(&pic_packet, packetdata, sizeof(packetdata));
     if(ESP_OK != ret) {
         ESP_LOGE(GATTS_TAG, "picture packet init failed, error code = %x", ret);
-	return;
+	    return;
     }
+
+    // ini the key input
+    ret = key_input_init();
+    if(ESP_OK != ret) {
+        ESP_LOGE(GATTS_TAG, "key input init failed, error code = %x", ret);
+	    return;
+    }
+    xTaskCreate(key_input_task, "key_input_task", 2048, NULL, 10, NULL);
 
 #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
     // The task is only created on the CPU core that Bluetooth is working on,
