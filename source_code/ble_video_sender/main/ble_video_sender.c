@@ -33,6 +33,7 @@
 
 #include "sdkconfig.h"
 #include "pic_packet.h"
+#include "rgb_led.h"
 
 #define GATTS_TAG "GATTS_DEMO"
 
@@ -755,6 +756,19 @@ void throughput_cal_task(void *param)
 }
 #endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
 
+static void rgb_led_task(void* arg)
+{
+    uint32_t redled = 0;
+    for (;;) {
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+        if(redled >= 20000)
+            redled = 0;
+        redled += 1000;
+        ESP_LOGI(GATTS_TAG, "redled:%d", (int)redled);
+        rgb_led_set(redled, 0, 0);
+    }
+}
+
 void app_main(void)
 {
     esp_err_t ret;
@@ -825,6 +839,14 @@ void app_main(void)
         ESP_LOGE(GATTS_TAG, "picture packet init failed, error code = %x", ret);
 	return;
     }
+
+    // init the rgb leds
+    ret = rgb_led_init();
+    if(ESP_OK != ret) {
+        ESP_LOGE(GATTS_TAG, "rgb led init failed, error code = %x", ret);
+	    return;
+    }
+    xTaskCreate(rgb_led_task, "rgb_led_task", 2048, NULL, 10, NULL);
 
 #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
     // The task is only created on the CPU core that Bluetooth is working on,
