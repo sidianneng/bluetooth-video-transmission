@@ -21,6 +21,7 @@
 #include "ble_client.h"
 #include "decode_image.h"
 #include "ble_video_receiver.h"
+#include "battery_icon.h"
 
 #define BLE_VIDEO_REV "ble_video_rev"
 
@@ -406,6 +407,7 @@ static void display_pretty_colors(spi_device_handle_t spi)
     //Indexes of the line currently being sent to the LCD and the line we're calculating.
     int sending_line = -1;
     int calc_line = 0;
+    unsigned char *bat_icon;
 
     while (1) {
         frame++;
@@ -420,9 +422,21 @@ static void display_pretty_colors(spi_device_handle_t spi)
             ret = decode_image(frame_data.data, frame_data.length);
 	    	//ret = decode_image(jpg_buffer22, sizeof(jpg_buffer22));
             ESP_ERROR_CHECK(ret);
+            bat_icon = bat_icon_full;
             for (int y = 0; y < 240; y += PARALLEL_LINES) {
                 //Calculate a line.
                 decode_calc_lines(lines[calc_line], y, frame, PARALLEL_LINES);
+                //Add battery icon
+                if(y == 0){
+                    for(int z = 0; z < 32; z++){
+                        for(int a = 0;a < 64; a += 2) {
+                            if(bat_icon[z * 64 + a] == 0xff && bat_icon[z * 64 + a + 1] == 0xff)
+                                lines[calc_line][240 * z + 208 + a / 2] &= bat_icon[z * 64 + a] * 256 + bat_icon[z * 64 + a + 1];
+                            else
+                                lines[calc_line][240 * z + 208 + a / 2] = bat_icon[z * 64 + a] * 256 + bat_icon[z * 64 + a + 1];
+                        }
+                    }
+                }
                 //Finish up the sending process of the previous line, if any
                 if (sending_line != -1) {
                     send_line_finish(spi);
