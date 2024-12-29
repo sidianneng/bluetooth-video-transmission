@@ -52,6 +52,7 @@ static esp_gattc_descr_elem_t *descr_elem_result = NULL;
 #if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
 static bool start = false;
 static uint64_t notify_len = 0;
+static uint64_t frame_cnt = 0;
 static uint64_t start_time = 0;
 static uint64_t current_time = 0;
 #endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
@@ -320,6 +321,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
 		//current frame data is complete
 		if (p_data->notify.value[3] == p_data->notify.value[2] && !frame_data.data_ready){ 
 			//ESP_LOGI(GATTC_TAG, "receive pic success ~~~~~~~~~~~~~~~~~ ");
+            frame_cnt++;
 			frame_data.data_ready = true;
 		}
 	}
@@ -364,6 +366,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         start_time = 0;
         current_time = 0;
         notify_len = 0;
+        frame_cnt = 0;
 #endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
         ESP_LOGI(GATTC_TAG, "ESP_GATTC_DISCONNECT_EVT, reason = %d", p_data->disconnect.reason);
         break;
@@ -543,11 +546,14 @@ static void throughput_cal_task(void *param)
         vTaskDelay(2000 / portTICK_PERIOD_MS);
         if(is_connect){
             uint32_t bit_rate = 0;
+            uint32_t frame_rate = 0;
             if (start_time) {
                 current_time = esp_timer_get_time();
                 bit_rate = notify_len * SECOND_TO_USECOND / (current_time - start_time);
                 //ESP_LOGI(GATTC_TAG, "Notify Bit rate = %" PRIu32 " Byte/s, = %" PRIu32 " bit/s, time = %ds",
                 //        bit_rate, bit_rate<<3, (int)((current_time - start_time) / SECOND_TO_USECOND));
+                frame_rate = frame_cnt * SECOND_TO_USECOND / (current_time - start_time);
+                ESP_LOGI(GATTC_TAG, "FPS:%" PRIu32 "", frame_rate);
             } else {
                 ESP_LOGI(GATTC_TAG, "Notify Bit rate = 0 Byte/s, = 0 bit/s");
             }
