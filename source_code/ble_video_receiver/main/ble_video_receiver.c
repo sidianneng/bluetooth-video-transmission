@@ -415,14 +415,14 @@ static void display_pretty_colors(spi_device_handle_t spi)
 	        check_data = 0;
 	        for(int i = 0; i < frame_data.length; i++)
 	    	    check_data += frame_data.data[i];
-	        ESP_LOGI("S", "get frame OK length:%d chksum:0x%08x\n", (int)frame_data.length, check_data);
-	        current_time = esp_timer_get_time();
-	        //ESP_LOGI("S", "%d\n", (int)(current_time - last_time));
-	        //last_time = current_time;
+	        //ESP_LOGI("S", "get frame OK length:%d chksum:0x%08x\n", (int)frame_data.length, check_data);
+	        last_time = esp_timer_get_time();
             ret = decode_image(frame_data.data, frame_data.length);
+	        //ESP_LOGI("decode time", "%d", (int)(esp_timer_get_time() - last_time));
 	    	//ret = decode_image(jpg_buffer22, sizeof(jpg_buffer22));
             ESP_ERROR_CHECK(ret);
             bat_icon = bat_icon_full;
+            last_time = esp_timer_get_time();
             for (int y = 0; y < 240; y += PARALLEL_LINES) {
                 //Calculate a line.
                 decode_calc_lines(lines[calc_line], y, frame, PARALLEL_LINES);
@@ -450,6 +450,7 @@ static void display_pretty_colors(spi_device_handle_t spi)
                 //background. We can go on to calculate the next line set as long as we do not
                 //touch line[sending_line]; the SPI sending process is still reading from that.
             }
+            //ESP_LOGI("display time", "%d", (int)(esp_timer_get_time() - last_time));
 	        frame_data.data_ready = false;
 	        frame_data.length = 0;
 	    }
@@ -470,7 +471,7 @@ void app_main(void)
         .max_transfer_sz = PARALLEL_LINES * 240 * 2 + 8
     };
     spi_device_interface_config_t devcfg = {
-        .clock_speed_hz = 10 * 1000 * 1000,     //Clock out at 80 MHz
+        .clock_speed_hz = 80 * 1000 * 1000,     //Clock out at 80 MHz
         .mode = 0,                              //SPI mode 0
         .spics_io_num = PIN_NUM_CS,             //CS pin
         .queue_size = 7,                        //We want to be able to queue 7 transactions at a time
