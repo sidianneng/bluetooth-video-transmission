@@ -409,16 +409,16 @@ static void display_pretty_colors(spi_device_handle_t spi)
 
     while (1) {
         frame++;
-	if (frame_data.data_ready){
-	    check_data = 0;
-	    for(int i = 0; i < frame_data.length; i++)
-		check_data += frame_data.data[i];
-	    ESP_LOGI("S", "get frame OK length:%d chksum:0x%08x\n", (int)frame_data.length, check_data);
-	    current_time = esp_timer_get_time();
-	    //ESP_LOGI("S", "%d\n", (int)(current_time - last_time));
-	    //last_time = current_time;
+	    if (frame_data.data_ready){
+	        check_data = 0;
+	        for(int i = 0; i < frame_data.length; i++)
+	    	    check_data += frame_data.data[i];
+	        ESP_LOGI("S", "get frame OK length:%d chksum:0x%08x\n", (int)frame_data.length, check_data);
+	        current_time = esp_timer_get_time();
+	        //ESP_LOGI("S", "%d\n", (int)(current_time - last_time));
+	        //last_time = current_time;
             ret = decode_image(frame_data.data, frame_data.length);
-		//ret = decode_image(jpg_buffer22, sizeof(jpg_buffer22));
+	    	//ret = decode_image(jpg_buffer22, sizeof(jpg_buffer22));
             ESP_ERROR_CHECK(ret);
             for (int y = 0; y < 240; y += PARALLEL_LINES) {
                 //Calculate a line.
@@ -436,9 +436,9 @@ static void display_pretty_colors(spi_device_handle_t spi)
                 //background. We can go on to calculate the next line set as long as we do not
                 //touch line[sending_line]; the SPI sending process is still reading from that.
             }
-	    frame_data.data_ready = false;
-	    frame_data.length = 0;
-	}
+	        frame_data.data_ready = false;
+	        frame_data.length = 0;
+	    }
 	vTaskDelay(5 / portTICK_PERIOD_MS);
     }
 }
