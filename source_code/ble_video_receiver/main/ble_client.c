@@ -552,7 +552,9 @@ static void throughput_cal_task(void *param)
                 bit_rate = notify_len * SECOND_TO_USECOND / (current_time - start_time);
                 //ESP_LOGI(GATTC_TAG, "Notify Bit rate = %" PRIu32 " Byte/s, = %" PRIu32 " bit/s, time = %ds",
                 //        bit_rate, bit_rate<<3, (int)((current_time - start_time) / SECOND_TO_USECOND));
-                frame_rate = frame_cnt * SECOND_TO_USECOND / (current_time - start_time);
+                //frame_rate = frame_cnt * SECOND_TO_USECOND / (current_time - start_time);
+                frame_rate = frame_cnt / 2;
+                frame_cnt = 0;
                 ESP_LOGI(GATTC_TAG, "FPS:%" PRIu32 "", frame_rate);
             } else {
                 ESP_LOGI(GATTC_TAG, "Notify Bit rate = 0 Byte/s, = 0 bit/s");
