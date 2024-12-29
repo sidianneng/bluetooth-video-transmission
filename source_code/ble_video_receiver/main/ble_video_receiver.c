@@ -470,11 +470,7 @@ void app_main(void)
         .max_transfer_sz = PARALLEL_LINES * 240 * 2 + 8
     };
     spi_device_interface_config_t devcfg = {
-#ifdef CONFIG_LCD_OVERCLOCK
-        .clock_speed_hz = 26 * 1000 * 1000,     //Clock out at 26 MHz
-#else
-        .clock_speed_hz = 10 * 1000 * 1000,     //Clock out at 10 MHz
-#endif
+        .clock_speed_hz = 10 * 1000 * 1000,     //Clock out at 80 MHz
         .mode = 0,                              //SPI mode 0
         .spics_io_num = PIN_NUM_CS,             //CS pin
         .queue_size = 7,                        //We want to be able to queue 7 transactions at a time
