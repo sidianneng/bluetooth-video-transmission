@@ -695,37 +695,37 @@ void throughput_server_task(void *param)
             assert(res == pdTRUE);
         } else {
             if (is_connect) {
-		camera_fb_t *pic_cam = esp_camera_fb_get();
-		check_data = 0;
-		for(int i = 0; i < pic_cam->len; i++)
-		    check_data += pic_cam->buf[i];
-		ESP_LOGI(GATTS_TAG, "Picture taken! Its size was: %zu bytes chksum:0x%08x", pic_cam->len, check_data);
-		pic_packet.frame_cnt++;
-		pic_packet.all_pack_num = pic_cam->len / pic_packet.length + 1;
+		        camera_fb_t *pic_cam = esp_camera_fb_get();
+		        check_data = 0;
+		        for(int i = 0; i < pic_cam->len; i++)
+		            check_data += pic_cam->buf[i];
+		        ESP_LOGI(GATTS_TAG, "Picture taken! Its size was: %zu bytes chksum:0x%08x", pic_cam->len, check_data);
+		        pic_packet.frame_cnt++;
+		        pic_packet.all_pack_num = pic_cam->len / pic_packet.length + 1;
                 int free_buff_num = esp_ble_get_cur_sendable_packets_num(gl_profile_tab[PROFILE_A_APP_ID].conn_id);
                 if(free_buff_num > 0) {
                     for( ; free_buff_num > 0; free_buff_num--) {
-			pic_packet.cur_pack_num++;
-			tmp_index = pic_packet_data(&pic_packet, pic_cam->buf + index, pic_cam->len - index);
-			if(index + pic_packet.length <= pic_cam->len) {
-				esp_ble_gatts_send_indicate(gl_profile_tab[PROFILE_A_APP_ID].gatts_if, gl_profile_tab[PROFILE_A_APP_ID].conn_id,
-								gl_profile_tab[PROFILE_A_APP_ID].char_handle,
-								sizeof(packetdata), packetdata, false);
-			} else {
-				esp_ble_gatts_send_indicate(gl_profile_tab[PROFILE_A_APP_ID].gatts_if, gl_profile_tab[PROFILE_A_APP_ID].conn_id,
-								gl_profile_tab[PROFILE_A_APP_ID].char_handle,
-								pic_packet.length + PACK_HEAD_LEN, packetdata, false);
-				pic_packet.cur_pack_num = 0;
-				index = 0;
-				pic_packet.length = sizeof(packetdata) - PACK_HEAD_LEN;
-				break;
-			}
-			index += tmp_index;
+			            pic_packet.cur_pack_num++;
+			            tmp_index = pic_packet_data(&pic_packet, pic_cam->buf + index, pic_cam->len - index);
+			            if(index + pic_packet.length <= pic_cam->len) {
+			            	esp_ble_gatts_send_indicate(gl_profile_tab[PROFILE_A_APP_ID].gatts_if, gl_profile_tab[PROFILE_A_APP_ID].conn_id,
+			            					gl_profile_tab[PROFILE_A_APP_ID].char_handle,
+			            					sizeof(packetdata), packetdata, false);
+			            } else {
+			            	esp_ble_gatts_send_indicate(gl_profile_tab[PROFILE_A_APP_ID].gatts_if, gl_profile_tab[PROFILE_A_APP_ID].conn_id,
+			            					gl_profile_tab[PROFILE_A_APP_ID].char_handle,
+			            					pic_packet.length + PACK_HEAD_LEN, packetdata, false);
+			            	pic_packet.cur_pack_num = 0;
+			            	index = 0;
+			            	pic_packet.length = sizeof(packetdata) - PACK_HEAD_LEN;
+			            	break;
+			            }
+			            index += tmp_index;
                     }
                 } else { //Add the vTaskDelay to prevent this task from consuming the CPU all the time, causing low-priority tasks to not be executed at all.
                     vTaskDelay( 10 / portTICK_PERIOD_MS );
                 }
-		esp_camera_fb_return(pic_cam);
+		        esp_camera_fb_return(pic_cam);
                 vTaskDelay( 100 / portTICK_PERIOD_MS );
             } else {
                  vTaskDelay(300 / portTICK_PERIOD_MS);
