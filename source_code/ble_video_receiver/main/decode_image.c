@@ -90,7 +90,7 @@ static esp_err_t decode_jpeg(uint16_t *pixels, uint8_t *jpeg_data, uint32_t jpeg
     //JPEG decode
     esp_jpeg_decode(&jpeg_cfg, &outimg);
 
-    ESP_LOGI(TAG, "JPEG image decoded! Size of the decoded image is: %dpx x %dpx", outimg.width, outimg.height);
+    //ESP_LOGI(TAG, "JPEG image decoded! Size of the decoded image is: %dpx x %dpx", outimg.width, outimg.height);
 
     return ret;
 }
