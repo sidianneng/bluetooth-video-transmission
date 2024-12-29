@@ -33,6 +33,9 @@
 
 #include "sdkconfig.h"
 #include "pic_packet.h"
+#include "driver/rtc_io.h"
+#include "esp_sleep.h"
+#include "ext_wakeup.h"
 
 #define GATTS_TAG "GATTS_DEMO"
 
@@ -755,6 +758,28 @@ void throughput_cal_task(void *param)
 }
 #endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
 
+static void deep_sleep_task(void *args)
+{
+    switch (esp_sleep_get_wakeup_cause()) {
+        case ESP_SLEEP_WAKEUP_EXT1: {
+            uint64_t wakeup_pin_mask = esp_sleep_get_ext1_wakeup_status();
+            if (wakeup_pin_mask != 0) {
+                int pin = __builtin_ffsll(wakeup_pin_mask) - 1;
+                printf("Wake up from GPIO %d\n", pin);
+            } else {
+                printf("Wake up from GPIO\n");
+            }
+            break;
+        }
+        default:
+            printf("Not a deep sleep reset\n");
+    }
+
+    printf("Entering deep sleep\n");
+    // enter deep sleep
+    esp_deep_sleep_start();
+}
+
 void app_main(void)
 {
     esp_err_t ret;
@@ -825,6 +850,14 @@ void app_main(void)
         ESP_LOGE(GATTS_TAG, "picture packet init failed, error code = %x", ret);
 	return;
     }
+
+    // init deep sleep 
+    ret = deep_sleep_init();
+    if(ESP_OK != ret) {
+        ESP_LOGE(GATTS_TAG, "deep sleep init failed, error code = %x", ret);
+	    return;
+    }
+    xTaskCreate(deep_sleep_task, "deep_sleep_task", 4096, NULL, 6, NULL);
 
 #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
     // The task is only created on the CPU core that Bluetooth is working on,

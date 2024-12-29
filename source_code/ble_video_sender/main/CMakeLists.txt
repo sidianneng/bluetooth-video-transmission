@@ -1,2 +1,3 @@
 idf_component_register(SRCS "ble_video_sender.c" "pic_packet.c"
+                        "ext_wakeup.c"
                     INCLUDE_DIRS ".")
