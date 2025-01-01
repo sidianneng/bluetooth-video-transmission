@@ -32,10 +32,9 @@ extern "C" {
 #endif
 
 typedef struct FRAME_DATA {
-	uint8_t *data[2];
-	uint32_t length[2];
-	bool data_ready[2];
-    int8_t valid_data_index;
+	uint8_t *data;
+	uint32_t length;
+	bool data_ready;
 } Frame_data;
 
 #ifdef __cplusplus
