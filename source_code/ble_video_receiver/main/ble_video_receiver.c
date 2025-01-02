@@ -64,6 +64,7 @@ Frame_data frame_data = {
 //but less overhead for setting up / finishing transfers. Make sure 240 is dividable by this.
 #define PARALLEL_LINES 32 
 
+spi_device_handle_t spi;
 /*
  The LCD needs a bunch of command/argument values to be initialized. They are stored in this struct.
 */
@@ -390,14 +391,14 @@ static void send_line_finish(spi_device_handle_t spi)
 }
 
 static uint64_t last_time = 0, current_time = 0;
-static unsigned int check_data = 0;
 //Simple routine to generate some patterns and send them to the LCD. Don't expect anything too
 //impressive. Because the SPI driver handles transactions in the background, we can calculate the next line
 //while the previous one is being sent.
-static void display_pretty_colors(spi_device_handle_t spi)
+static void video_receive_task(void* arg)
 {
     uint16_t *lines[2];
     esp_err_t ret;
+    spi_device_handle_t *spi = (spi_device_handle_t *)(arg);
     //Allocate memory for the pixel buffers
     for (int i = 0; i < 2; i++) {
         lines[i] = heap_caps_malloc(240 * PARALLEL_LINES * sizeof(uint16_t), MALLOC_CAP_DMA);
@@ -412,14 +413,9 @@ static void display_pretty_colors(spi_device_handle_t spi)
     while (1) {
         frame++;
 	    if (frame_data.data_ready){
-	        check_data = 0;
-	        for(int i = 0; i < frame_data.length; i++)
-	    	    check_data += frame_data.data[i];
-	        //ESP_LOGI("S", "get frame OK length:%d chksum:0x%08x\n", (int)frame_data.length, check_data);
 	        last_time = esp_timer_get_time();
             ret = decode_image(frame_data.data, frame_data.length);
 	        //ESP_LOGI("decode time", "%d", (int)(esp_timer_get_time() - last_time));
-	    	//ret = decode_image(jpg_buffer22, sizeof(jpg_buffer22));
             ESP_ERROR_CHECK(ret);
             bat_icon = bat_icon_full;
             last_time = esp_timer_get_time();
@@ -439,13 +435,13 @@ static void display_pretty_colors(spi_device_handle_t spi)
                 }
                 //Finish up the sending process of the previous line, if any
                 if (sending_line != -1) {
-                    send_line_finish(spi);
+                    send_line_finish(*spi);
                 }
                 //Swap sending_line and calc_line
                 sending_line = calc_line;
                 calc_line = (calc_line == 1) ? 0 : 1;
                 //Send the line we currently calculated.
-                send_lines(spi, y, lines[sending_line]);
+                send_lines(*spi, y, lines[sending_line]);
                 //The line set is queued up for sending now; the actual sending happens in the
                 //background. We can go on to calculate the next line set as long as we do not
                 //touch line[sending_line]; the SPI sending process is still reading from that.
@@ -453,15 +449,15 @@ static void display_pretty_colors(spi_device_handle_t spi)
             //ESP_LOGI("display time", "%d", (int)(esp_timer_get_time() - last_time));
 	        frame_data.data_ready = false;
 	        frame_data.length = 0;
-	    }
-	vTaskDelay(5 / portTICK_PERIOD_MS);
+	    } else {
+	        vTaskDelay(5 / portTICK_PERIOD_MS);
+        }
     }
 }
 
 void app_main(void)
 {
     esp_err_t ret;
-    spi_device_handle_t spi;
     spi_bus_config_t buscfg = {
         .miso_io_num = PIN_NUM_MISO,
         .mosi_io_num = PIN_NUM_MOSI,
@@ -497,5 +493,6 @@ void app_main(void)
     //ESP_ERROR_CHECK(ret);
 
     //Go do nice stuff.
-    display_pretty_colors(spi);
+    //display_pretty_colors(spi);
+    xTaskCreate(video_receive_task, "video_receive_task", 4096, &spi, 10, NULL);
 }
