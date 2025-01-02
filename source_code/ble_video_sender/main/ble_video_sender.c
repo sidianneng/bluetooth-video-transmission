@@ -726,7 +726,7 @@ void throughput_server_task(void *param)
                     vTaskDelay( 10 / portTICK_PERIOD_MS );
                 }
 		        esp_camera_fb_return(pic_cam);
-                vTaskDelay( 60 / portTICK_PERIOD_MS );
+                vTaskDelay( 50 / portTICK_PERIOD_MS );
             } else {
                  vTaskDelay(300 / portTICK_PERIOD_MS);
             }
