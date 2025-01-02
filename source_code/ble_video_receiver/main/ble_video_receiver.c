@@ -427,9 +427,9 @@ static void video_receive_task(void* arg)
                     for(int z = 0; z < 32; z++){
                         for(int a = 0;a < 64; a += 2) {
                             if(bat_icon[z * 64 + a] == 0xff && bat_icon[z * 64 + a + 1] == 0xff)
-                                lines[calc_line][240 * z + 208 + a / 2] &= bat_icon[z * 64 + a] * 256 + bat_icon[z * 64 + a + 1];
+                                lines[calc_line][240 * z + 200 + a / 2] &= bat_icon[z * 64 + a] * 256 + bat_icon[z * 64 + a + 1];
                             else
-                                lines[calc_line][240 * z + 208 + a / 2] = bat_icon[z * 64 + a] * 256 + bat_icon[z * 64 + a + 1];
+                                lines[calc_line][240 * z + 200 + a / 2] = bat_icon[z * 64 + a] * 256 + bat_icon[z * 64 + a + 1];
                         }
                     }
                 }
