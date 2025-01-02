@@ -318,7 +318,7 @@ void lcd_init(spi_device_handle_t spi)
     }
 
     ///Enable backlight
-    gpio_set_level(PIN_NUM_BCKL, LCD_BK_LIGHT_ON_LEVEL);
+    //gpio_set_level(PIN_NUM_BCKL, LCD_BK_LIGHT_ON_LEVEL);
 }
 
 /* To send a set of lines we have to send a command, 2 data bytes, another command, 2 more data bytes and another command
@@ -449,6 +449,8 @@ static void video_receive_task(void* arg)
             //ESP_LOGI("display time", "%d", (int)(esp_timer_get_time() - last_time));
 	        frame_data.data_ready = false;
 	        frame_data.length = 0;
+            //we enable the lcd backlight here to fix the lcd init noise
+            gpio_set_level(PIN_NUM_BCKL, LCD_BK_LIGHT_ON_LEVEL);
 	    } else {
 	        vTaskDelay(5 / portTICK_PERIOD_MS);
         }
