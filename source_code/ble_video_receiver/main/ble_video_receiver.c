@@ -486,13 +486,7 @@ void app_main(void)
     if(ESP_OK != ret) {
         ESP_LOGE(BLE_VIDEO_REV, "%s ble client init failed, error code = %x", __func__, ret);
     }
-    //Initialize the effect displayed
-    current_time = esp_timer_get_time();
-    //ret = pretty_effect_init();
-    //ESP_LOGI("S", "%d\n", (int)(esp_timer_get_time() - current_time));
-    //ESP_ERROR_CHECK(ret);
 
-    //Go do nice stuff.
-    //display_pretty_colors(spi);
+    //create video receive task
     xTaskCreate(video_receive_task, "video_receive_task", 4096, &spi, 10, NULL);
 }
