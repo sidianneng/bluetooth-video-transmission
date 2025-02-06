@@ -32,13 +32,19 @@ SOFTWARE.
 #define GPIO_INPUT_PIN_SEL  (1ULL<<GPIO_INPUT_IO_0)
 
 #define ESP_INTR_FLAG_DEFAULT 0
+#define DEBOUNCE_TIME_MS 50
 
 QueueHandle_t gpio_evt_queue = NULL;
 
 static void IRAM_ATTR gpio_isr_handler(void* arg)
 {
+    static uint32_t last_isr_time = 0;
+    uint32_t current_time = xTaskGetTickCount() * portTICK_PERIOD_MS;
     uint32_t gpio_num = (uint32_t) arg;
-    xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
+    if (current_time - last_isr_time > DEBOUNCE_TIME_MS) {
+        xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
+        last_isr_time = current_time;
+    }
 }
 
 esp_err_t key_input_init(void)
