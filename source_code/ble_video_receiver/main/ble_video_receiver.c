@@ -62,6 +62,7 @@ Frame_data frame_data = {
 #define PIN_NUM_BCKL 42
 
 #define LCD_BK_LIGHT_ON_LEVEL  1 
+#define LCD_BK_LIGHT_OFF_LEVEL  0 
 
 //To speed up transfers, every SPI transfer sends a bunch of lines. This define specifies how many. More means more memory use,
 //but less overhead for setting up / finishing transfers. Make sure 240 is dividable by this.
@@ -453,19 +454,25 @@ static void video_receive_task(void* arg)
 	        frame_data.data_ready = false;
 	        frame_data.length = 0;
             //we enable the lcd backlight here to fix the lcd init noise
-            gpio_set_level(PIN_NUM_BCKL, LCD_BK_LIGHT_ON_LEVEL);
+            //gpio_set_level(PIN_NUM_BCKL, LCD_BK_LIGHT_ON_LEVEL);
 	    } else {
 	        vTaskDelay(5 / portTICK_PERIOD_MS);
         }
     }
 }
 
+static uint32_t system_stat = 0;
 static void key_input_task(void* arg)
 {
     uint32_t io_num;
     for (;;) {
         if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
             printf("rev GPIO[%"PRIu32"] intr, val: %d\n", io_num, gpio_get_level(io_num));
+            system_stat++;
+            if(system_stat%2)
+                gpio_set_level(PIN_NUM_BCKL, LCD_BK_LIGHT_ON_LEVEL);
+            else
+                gpio_set_level(PIN_NUM_BCKL, LCD_BK_LIGHT_OFF_LEVEL);
         }
     }
 }
