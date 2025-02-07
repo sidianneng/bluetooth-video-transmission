@@ -22,8 +22,11 @@
 #include "decode_image.h"
 #include "ble_video_receiver.h"
 #include "battery_icon.h"
+#include "key_input.h"
 
 #define BLE_VIDEO_REV "ble_video_rev"
+
+extern QueueHandle_t gpio_evt_queue;
 
 uint8_t jpeg_data[10 * 1024];
 
@@ -457,6 +460,16 @@ static void video_receive_task(void* arg)
     }
 }
 
+static void key_input_task(void* arg)
+{
+    uint32_t io_num;
+    for (;;) {
+        if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
+            printf("rev GPIO[%"PRIu32"] intr, val: %d\n", io_num, gpio_get_level(io_num));
+        }
+    }
+}
+
 void app_main(void)
 {
     esp_err_t ret;
@@ -488,6 +501,14 @@ void app_main(void)
     if(ESP_OK != ret) {
         ESP_LOGE(BLE_VIDEO_REV, "%s ble client init failed, error code = %x", __func__, ret);
     }
+
+    //Initialize the key input
+    ret = key_input_init();
+    if(ESP_OK != ret) {
+        ESP_LOGE(BLE_VIDEO_REV, "key input init failed, error code = %x", ret);
+	    return;
+    }
+    xTaskCreate(key_input_task, "key_input_task", 2048, NULL, 10, NULL);
 
     //create video receive task
     xTaskCreate(video_receive_task, "video_receive_task", 4096, &spi, 10, NULL);
