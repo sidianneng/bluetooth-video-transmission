@@ -758,13 +758,36 @@ void throughput_cal_task(void *param)
 }
 #endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
 
+static uint8_t system_stat = 0;
 static void key_input_task(void* arg)
 {
     uint32_t io_num;
     for (;;) {
         if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
             printf("GPIO[%"PRIu32"] intr, val: %d\n", io_num, gpio_get_level(io_num));
+            system_stat++;
         }
+    }
+}
+
+static void led_ctrl_task(void* arg)
+{
+    uint32_t tmp = 0;
+    for(;;) {
+        tmp++;
+        if(system_stat%2){
+            gpio_set_level(35, tmp % 2); 
+            gpio_set_level(36, tmp % 2); 
+            gpio_set_level(38, tmp % 2); 
+        } else {
+            gpio_set_level(35, 1); 
+            gpio_set_level(36, 1); 
+            gpio_set_level(38, 1); 
+        }
+        if(is_connect)
+            vTaskDelay(100 / portTICK_PERIOD_MS);
+        else
+            vTaskDelay(500 / portTICK_PERIOD_MS);
     }
 }
 
@@ -846,6 +869,18 @@ void app_main(void)
 	    return;
     }
     xTaskCreate(key_input_task, "key_input_task", 2048, NULL, 10, NULL);
+
+    // init system led control
+    gpio_reset_pin(35);
+    gpio_set_direction(35, GPIO_MODE_OUTPUT);    
+    gpio_reset_pin(36);
+    gpio_set_direction(36, GPIO_MODE_OUTPUT);    
+    gpio_reset_pin(38);
+    gpio_set_direction(38, GPIO_MODE_OUTPUT);    
+    gpio_set_level(35, 1); 
+    gpio_set_level(36, 1); 
+    gpio_set_level(38, 1); 
+    xTaskCreate(led_ctrl_task, "led_ctrl_task", 2048, NULL, 10, NULL);
 
 #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
     // The task is only created on the CPU core that Bluetooth is working on,
