@@ -45,20 +45,20 @@ extern QueueHandle_t gpio_evt_queue;
 
 #define CAM_PIN_PWDN -1  //power down is not used
 #define CAM_PIN_RESET -1 //software reset will be performed
-#define CAM_PIN_XCLK 15
-#define CAM_PIN_SIOD 4
-#define CAM_PIN_SIOC 5
+#define CAM_PIN_XCLK 17
+#define CAM_PIN_SIOD 26 
+#define CAM_PIN_SIOC 21 
 
-#define CAM_PIN_D7 16
-#define CAM_PIN_D6 17
-#define CAM_PIN_D5 18
+#define CAM_PIN_D7 18
+#define CAM_PIN_D6 16
+#define CAM_PIN_D5 15
 #define CAM_PIN_D4 12
 #define CAM_PIN_D3 10
 #define CAM_PIN_D2 8
 #define CAM_PIN_D1 9
 #define CAM_PIN_D0 11
-#define CAM_PIN_VSYNC 6
-#define CAM_PIN_HREF 7
+#define CAM_PIN_VSYNC 20
+#define CAM_PIN_HREF 19
 #define CAM_PIN_PCLK 13
 
 static camera_config_t camera_config = {
@@ -871,15 +871,15 @@ void app_main(void)
     xTaskCreate(key_input_task, "key_input_task", 2048, NULL, 10, NULL);
 
     // init system led control
+    gpio_reset_pin(34);
+    gpio_set_direction(34, GPIO_MODE_OUTPUT);    
     gpio_reset_pin(35);
     gpio_set_direction(35, GPIO_MODE_OUTPUT);    
     gpio_reset_pin(36);
     gpio_set_direction(36, GPIO_MODE_OUTPUT);    
-    gpio_reset_pin(38);
-    gpio_set_direction(38, GPIO_MODE_OUTPUT);    
-    gpio_set_level(35, 1); 
-    gpio_set_level(36, 1); 
-    gpio_set_level(38, 1); 
+    gpio_set_level(35, 0); 
+    gpio_set_level(36, 0); 
+    gpio_set_level(38, 0); 
     xTaskCreate(led_ctrl_task, "led_ctrl_task", 2048, NULL, 10, NULL);
 
 #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
