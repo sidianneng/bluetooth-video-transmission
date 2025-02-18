@@ -28,7 +28,7 @@ SOFTWARE.
 #include "freertos/queue.h"
 #include "driver/gpio.h"
 
-#define GPIO_INPUT_IO_0     37 
+#define GPIO_INPUT_IO_0     33 
 #define GPIO_INPUT_PIN_SEL  (1ULL<<GPIO_INPUT_IO_0)
 
 #define ESP_INTR_FLAG_DEFAULT 0
@@ -58,9 +58,9 @@ esp_err_t key_input_init(void)
     //set as input mode
     io_conf.mode = GPIO_MODE_INPUT;
     //disable pull-up mode
-    io_conf.pull_up_en = 0;
+    io_conf.pull_up_en = 1;
     //enable pull-down mode
-    io_conf.pull_down_en = 1;
+    io_conf.pull_down_en = 0;
     gpio_config(&io_conf);
 
     //create a queue to handle gpio event from isr
