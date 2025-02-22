@@ -1,4 +1,5 @@
 # 蓝牙图像传输 | [Ble video transmission](./README-EN.md)
+![ble_video_tranmission](./doc/main.JPG)
 
 ## 1 项目概述
 现实应用中，无线视频传输一般使用的是带宽比较大的WIFI来实现，那么对于带宽非常有限的蓝牙来说是否有传输视频的可能性。其实23年上市的insta 360 go3已经给了我们答案：这个想法是可行的。
