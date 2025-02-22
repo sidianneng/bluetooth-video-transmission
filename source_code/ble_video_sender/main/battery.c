@@ -146,9 +146,9 @@ Battery_stat battery_get_stat(void)
         ESP_LOGI(BAT_TAG, "battery Cali Voltage: %d mV", voltage);
     }
 
-    if(voltage <= 1000)
+    if(voltage <= 2358) //3.8V
         battery_stat = BAT_LOW;
-    else if(voltage < 1500)
+    else if(voltage < 2451) //3.95V
         battery_stat = BAT_MID;
     else
         battery_stat = BAT_FULL;
