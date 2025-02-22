@@ -773,8 +773,10 @@ static void key_input_task(void* arg)
 static void led_ctrl_task(void* arg)
 {
     uint32_t tmp = 0;
+    bool is_charging = false;
     for(;;) {
         tmp++;
+        is_charging = !(gpio_get_level(1));
         if(system_stat%2){
             gpio_set_level(34, tmp % 2); 
             gpio_set_level(35, tmp % 2); 
@@ -881,6 +883,11 @@ void app_main(void)
     gpio_set_level(35, 1); 
     gpio_set_level(36, 1); 
     xTaskCreate(led_ctrl_task, "led_ctrl_task", 2048, NULL, 10, NULL);
+
+    // init system charge status
+    gpio_reset_pin(1);
+    gpio_set_direction(1, GPIO_MODE_INPUT);    
+    gpio_set_pull_mode(1, GPIO_PULLUP_ONLY);
 
 #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
     // The task is only created on the CPU core that Bluetooth is working on,
