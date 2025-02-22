@@ -1,0 +1,49 @@
+"bluetooth video receiver  Revised: Wednesday, October 23, 2024"					
+SIDIANNENG          Revision: 1.0					
+					
+					
+					
+					
+					
+					
+					
+"Bill Of Materials        October 24,2024      23:45:50"	Page1				
+					
+Item	Quantity	Reference	Part		
+______________________________________________					
+					
+1	1	A1	Ceramic ANTENNA		
+2	2	"CH1,CH3"	QFN16-CH343P	OK	
+3	1	CH2	QFN16-CH334P		OK
+4	2	"C1,C2"	18PF	OK	
+5	1	C3	8.2PF	OK	
+6	4	"C5,C8,C11,C27"	100NF	OK	
+7	2	"C9,C21"	1UF	OK	
+8	3	"C10,C12,C13"	10UF	OK	
+9	1	C22	10NF	OK	
+10	1	D2	RED	OK	
+11	1	E1	QFN56-ESP32-S3		OK
+12	1	F1	Flash		OK
+13	1	J1	1.54inch-LCD	OK	
+14	1	L1	DNP	OK	
+15	1	L2	39nH		OK
+16	1	L3	2nH		OK
+17	1	M1	SOT-23-5-ME6211C33		OK
+18	1	P1	type-c-16pin	OK	
+19	4	"Q4,Q5,Q7,Q8"	NPN SS8050	OK	
+20	1	Q6	AO3400	OK	
+21	1	R1	PTC		OK
+22	4	"R2,R3,R22,R23"	4.7K	OK	
+23	3	"R4,R15,R18"	10K	OK	
+24	2	"R6,R7"	1M	OK	
+25	1	R13	499R		OK
+26	1	R16	10R	OK	
+27	1	R17	51K	OK	
+28	2	"R19,R20"	5.1K	OK	
+29	1	R21	1K	OK	
+30	1	S1	EVQ-P7A01P	OK	
+31	1	T1	SOT-23-5-TP4055		OK
+32	1	U1	CON6		OK
+33	1	U2	CON2	OK	
+34	1	X1	40MHz		OK
+35	1	X2	12Mhz		OK
