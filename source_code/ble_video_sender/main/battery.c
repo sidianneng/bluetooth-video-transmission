@@ -143,7 +143,7 @@ Battery_stat battery_get_stat(void)
 
     if (do_calibration2) {
         ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc2_cali_handle, adc_raw, &voltage));
-        ESP_LOGI(BAT_TAG, "battery Cali Voltage: %d mV", voltage);
+        //ESP_LOGI(BAT_TAG, "battery Cali Voltage: %d mV", voltage);
     }
 
     if(voltage <= 2358) //3.8V
