@@ -421,7 +421,10 @@ static void video_receive_task(void* arg)
             ret = decode_image(frame_data.data, frame_data.length);
 	        //ESP_LOGI("decode time", "%d", (int)(esp_timer_get_time() - last_time));
             ESP_ERROR_CHECK(ret);
-            bat_icon = bat_icon_full;
+            if(gpio_get_level(37) == 0)
+                bat_icon = bat_icon_charge;
+            else
+                bat_icon = bat_icon_mid;
             last_time = esp_timer_get_time();
             for (int y = 0; y < 240; y += PARALLEL_LINES) {
                 //Calculate a line.
@@ -516,6 +519,11 @@ void app_main(void)
 	    return;
     }
     xTaskCreate(key_input_task, "key_input_task", 2048, NULL, 10, NULL);
+
+    //Initialize the charge status gpio
+    gpio_reset_pin(37);
+    gpio_set_direction(37, GPIO_MODE_INPUT);    
+    gpio_set_pull_mode(37, GPIO_PULLUP_ONLY);
 
     //create video receive task
     xTaskCreate(video_receive_task, "video_receive_task", 4096, &spi, 10, NULL);
