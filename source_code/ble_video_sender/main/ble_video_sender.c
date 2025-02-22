@@ -776,13 +776,13 @@ static void led_ctrl_task(void* arg)
     for(;;) {
         tmp++;
         if(system_stat%2){
+            gpio_set_level(34, tmp % 2); 
             gpio_set_level(35, tmp % 2); 
             gpio_set_level(36, tmp % 2); 
-            gpio_set_level(38, tmp % 2); 
         } else {
+            gpio_set_level(34, 1); 
             gpio_set_level(35, 1); 
             gpio_set_level(36, 1); 
-            gpio_set_level(38, 1); 
         }
         if(is_connect)
             vTaskDelay(100 / portTICK_PERIOD_MS);
@@ -877,9 +877,9 @@ void app_main(void)
     gpio_set_direction(35, GPIO_MODE_OUTPUT);    
     gpio_reset_pin(36);
     gpio_set_direction(36, GPIO_MODE_OUTPUT);    
-    gpio_set_level(35, 0); 
-    gpio_set_level(36, 0); 
-    gpio_set_level(38, 0); 
+    gpio_set_level(34, 1); 
+    gpio_set_level(35, 1); 
+    gpio_set_level(36, 1); 
     xTaskCreate(led_ctrl_task, "led_ctrl_task", 2048, NULL, 10, NULL);
 
 #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
