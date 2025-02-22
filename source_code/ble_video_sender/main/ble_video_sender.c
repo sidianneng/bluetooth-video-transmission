@@ -40,6 +40,10 @@
 
 extern QueueHandle_t gpio_evt_queue;
 
+#define LED_RED     34
+#define LED_GREEN   36
+#define LED_BLUE    35
+
 //camera include
 #include <nvs_flash.h>
 #include "esp_camera.h"
@@ -740,18 +744,6 @@ void throughput_server_task(void *param)
 }
 #endif
 
-void battery_stat_task(void *param)
-{
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-    Battery_stat bat_stat;
-
-    while(1) {
-        bat_stat = battery_get_stat(); 
-        ESP_LOGI(GATTS_TAG, "battery status:%d\n", bat_stat);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
-}
-
 #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
 void throughput_cal_task(void *param)
 {
@@ -787,18 +779,42 @@ static void led_ctrl_task(void* arg)
 {
     uint32_t tmp = 0;
     bool is_charging = false;
+    Battery_stat bat_cap;
     for(;;) {
         tmp++;
         is_charging = !(gpio_get_level(1));
-        if(system_stat%2){
-            gpio_set_level(34, tmp % 2); 
-            gpio_set_level(35, tmp % 2); 
-            gpio_set_level(36, tmp % 2); 
+        bat_cap = battery_get_stat(); 
+        bat_cap = BAT_MID; 
+        printf("bat cap:%d charge:%d\n", bat_cap, is_charging);
+        if(system_stat%2 || is_charging){
+            if(bat_cap == BAT_FULL) {
+                gpio_set_level(LED_RED, 1); 
+                gpio_set_level(LED_GREEN, 1); 
+                if(is_charging)
+                    gpio_set_level(LED_BLUE, 0); 
+                else
+                    gpio_set_level(LED_BLUE, tmp % 2); 
+            } else if(bat_cap == BAT_MID) {
+                gpio_set_level(LED_RED, 1); 
+                if(is_charging)
+                    gpio_set_level(LED_GREEN, 0); 
+                else
+                    gpio_set_level(LED_GREEN, tmp % 2); 
+                gpio_set_level(LED_BLUE, 1); 
+            } else {
+                if(is_charging)
+                    gpio_set_level(LED_RED, 0); 
+                else
+                    gpio_set_level(LED_RED, tmp % 2); 
+                gpio_set_level(LED_GREEN, 1); 
+                gpio_set_level(LED_BLUE, 1); 
+            }
         } else {
-            gpio_set_level(34, 1); 
-            gpio_set_level(35, 1); 
-            gpio_set_level(36, 1); 
+            gpio_set_level(LED_RED, 1); 
+            gpio_set_level(LED_GREEN, 1); 
+            gpio_set_level(LED_BLUE, 1); 
         }
+
         if(is_connect)
             vTaskDelay(100 / portTICK_PERIOD_MS);
         else
@@ -866,9 +882,9 @@ void app_main(void)
     }
 
     // init camera
-    //if(ESP_OK != init_camera()) {
-    //    return;
-    //}
+    if(ESP_OK != init_camera()) {
+        return;
+    }
 
     // init picture packet
     ret = pic_packet_init(&pic_packet, packetdata, sizeof(packetdata));
@@ -886,16 +902,16 @@ void app_main(void)
     xTaskCreate(key_input_task, "key_input_task", 2048, NULL, 10, NULL);
 
     // init system led control
-    gpio_reset_pin(34);
-    gpio_set_direction(34, GPIO_MODE_OUTPUT);    
-    gpio_reset_pin(35);
-    gpio_set_direction(35, GPIO_MODE_OUTPUT);    
-    gpio_reset_pin(36);
-    gpio_set_direction(36, GPIO_MODE_OUTPUT);    
-    gpio_set_level(34, 1); 
-    gpio_set_level(35, 1); 
-    gpio_set_level(36, 1); 
-    xTaskCreate(led_ctrl_task, "led_ctrl_task", 2048, NULL, 10, NULL);
+    gpio_reset_pin(LED_RED);
+    gpio_set_direction(LED_RED, GPIO_MODE_OUTPUT);    
+    gpio_reset_pin(LED_GREEN);
+    gpio_set_direction(LED_GREEN, GPIO_MODE_OUTPUT);    
+    gpio_reset_pin(LED_BLUE);
+    gpio_set_direction(LED_BLUE, GPIO_MODE_OUTPUT);    
+    gpio_set_level(LED_RED, 1); 
+    gpio_set_level(LED_GREEN, 1); 
+    gpio_set_level(LED_BLUE, 1); 
+    xTaskCreate(led_ctrl_task, "led_ctrl_task", 4096, NULL, 10, NULL);
 
     // init system charge status
     gpio_reset_pin(1);
@@ -913,8 +929,6 @@ void app_main(void)
     if(ESP_OK != ret) {
         ESP_LOGE(GATTS_TAG, "battery init failed, error code = %x", ret);
     }
-    // The task to get battery status 
-    xTaskCreatePinnedToCore(&battery_stat_task, "battery_stat_task", 4096, NULL, 16, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
 
 #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
     xTaskCreatePinnedToCore(&throughput_cal_task, "throughput_cal_task", 4096, NULL, 14, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
